@@ -1,6 +1,6 @@
 # ASCII Art Generator
 
-![ASCII ArtGen Banner](https://raw.githubusercontent.com/chafiq-dev/ASCII-ArtGen/banner.png)
+![ASCII ArtGen Banner](https://github.com/chafiq-dev/ASCII-ArtGen/blob/main/banner.png?raw=true)
 
 Transform images and videos into beautiful ASCII art directly in your browser!
 
