@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASCII Art Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // Material You 3.0 Color Palette - Light Theme
+                        'md-primary': '#6750A4',
+                        'md-on-primary': '#FFFFFF',
+                        'md-primary-container': '#EADDFF',
+                        'md-on-primary-container': '#21005D',
+                        'md-secondary': '#625B71',
+                        'md-on-secondary': '#FFFFFF',
+                        'md-secondary-container': '#E8DEF8',
+                        'md-on-secondary-container': '#1D192B',
+                        'md-tertiary': '#7D5260',
+                        'md-on-tertiary': '#FFFFFF',
+                        'md-tertiary-container': '#FFD8E4',
+                        'md-on-tertiary-container': '#31111D',
+                        'md-error': '#BA1A1A',
+                        'md-on-error': '#FFFFFF',
+                        'md-error-container': '#FFDAD6',
+                        'md-on-error-container': '#410002',
+                        'md-background': '#FFFBFE',
+                        'md-on-background': '#1C1B1F',
+                        'md-surface': '#FFFBFE',
+                        'md-on-surface': '#1C1B1F',
+                        'md-surface-variant': '#E7E0EC',
+                        'md-on-surface-variant': '#49454F',
+                        'md-outline': '#79747E',
+                        'md-outline-variant': '#CAC4D0',
+                        'md-shadow': '#000000',
+                        'md-scrim': '#000000',
+                        'md-inverse-surface': '#313033',
+                        'md-inverse-on-surface': '#F4EFF4',
+                        'md-inverse-primary': '#D0BCFF',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-md-background min-h-screen font-sans text-md-on-background">
+    <!-- Main Content -->
+    <div class="min-h-screen pb-20">
+        <!-- Header -->
+        <div class="bg-md-primary-container text-md-on-primary-container p-4 sm:p-6">
+            <div class="max-w-4xl mx-auto text-center">
+                <h1 class="text-2xl sm:text-3xl font-bold">ASCII Art Generator</h1>
+                <p class="mt-2 text-sm sm:text-base opacity-80">Transform images and videos into beautiful ASCII art</p>
+            </div>
+        </div>
+
+        <!-- Content Container -->
+        <div class="max-w-4xl mx-auto p-3 sm:p-6">
+            <!-- Image Mode -->
+            <div id="image-mode" class="mode-content">
+                <div class="bg-md-surface rounded-3xl shadow-lg border border-md-outline-variant overflow-hidden">
+                    <!-- Mode Header -->
+                    <div class="bg-md-secondary-container text-md-on-secondary-container p-4 sm:p-6">
+                        <h2 class="text-xl sm:text-2xl font-semibold flex items-center gap-3">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            Image to ASCII
+                        </h2>
+                    </div>
+
+                    <div class="p-4 sm:p-6 space-y-6">
+                        <!-- Upload Section -->
+                        <div class="space-y-3">
+                            <label class="block text-sm font-medium text-md-on-surface-variant">Upload Image</label>
+                            <input type="file" id="image-upload" accept="image/*" class="hidden">
+                            <button onclick="document.getElementById('image-upload').click()" 
+                                    class="w-full bg-md-primary hover:bg-md-primary/90 text-md-on-primary py-3 px-4 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 text-sm sm:text-base">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                </svg>
+                                Choose Image File
+                            </button>
+                            <div id="image-preview" class="hidden">
+                                <img id="preview-img" class="w-full h-32 sm:h-40 object-cover rounded-xl border-2 border-md-outline-variant">
+                            </div>
+                        </div>
+
+                        <!-- Controls Grid -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                            <!-- Detail Level -->
+                            <div class="space-y-3">
+                                <label class="block text-sm font-medium text-md-on-surface-variant">Detail Level</label>
+                                <div class="bg-md-surface-variant rounded-xl p-4">
+                                    <input type="range" id="detail-slider" min="20" max="200" value="80" 
+                                           class="w-full h-2 bg-md-outline-variant rounded-lg appearance-none cursor-pointer slider">
+                                    <div class="flex justify-between text-xs text-md-outline mt-2">
+                                        <span>Low</span>
+                                        <span>High</span>
+                                    </div>
+                                    <div class="text-center text-sm text-md-on-surface-variant mt-2">
+                                        Width: <span id="detail-value" class="font-semibold">80</span> characters
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Character Set -->
+                            <div class="space-y-3">
+                                <label class="block text-sm font-medium text-md-on-surface-variant">Character Set</label>
+                                <select id="charset-select" class="w-full p-3 border-2 border-md-outline-variant rounded-xl focus:border-md-primary focus:outline-none transition-colors bg-md-surface text-md-on-surface">
+                                    <option value="default">Default (@%#*+=-:. )</option>
+                                    <option value="simple">Simple (█▓▒░ )</option>
+                                    <option value="blocks">Blocks (██▓▒░)</option>
+                                    <option value="complex">Complex (@&%$#*+=~-:;,. )</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Invert Colors Toggle -->
+                        <div class="bg-md-surface-variant rounded-xl p-4">
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm font-medium text-md-on-surface-variant">Invert Colors</label>
+                                <div class="relative">
+                                    <input type="checkbox" id="invert-toggle" class="sr-only">
+                                    <div class="toggle-bg w-12 h-6 bg-md-outline-variant rounded-full cursor-pointer transition-colors duration-300"></div>
+                                    <div class="toggle-dot absolute left-1 top-1 w-4 h-4 bg-md-surface rounded-full transition-transform duration-300 shadow-sm"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Generate Button -->
+                        <button id="generate-image-btn" disabled 
+                                class="w-full bg-md-secondary hover:bg-md-secondary/90 disabled:bg-md-surface-variant disabled:cursor-not-allowed text-md-on-secondary disabled:text-md-on-surface-variant py-3 px-4 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 text-sm sm:text-base">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                            Generate ASCII Art
+                        </button>
+
+                        <!-- Output -->
+                        <div class="space-y-3">
+                            <h3 class="text-lg font-semibold text-md-on-surface">Preview</h3>
+                            <div class="relative">
+                                <div id="ascii-output" class="bg-md-inverse-surface text-md-inverse-on-surface p-3 sm:p-4 rounded-xl min-h-48 sm:min-h-64 font-mono text-xs overflow-auto whitespace-pre border-2 border-md-outline-variant">
+                                    <div class="text-center text-md-outline mt-16 sm:mt-20 text-xs sm:text-sm">
+                                        Upload an image to generate ASCII art
+                                    </div>
+                                </div>
+                                <button id="copy-btn" class="hidden absolute top-2 right-2 bg-md-primary hover:bg-md-primary/90 text-md-on-primary px-3 py-1 rounded-lg text-xs sm:text-sm transition-all duration-300 flex items-center gap-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                    </svg>
+                                    Copy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Mode -->
+            <div id="video-mode" class="mode-content hidden">
+                <div class="bg-md-surface rounded-3xl shadow-lg border border-md-outline-variant overflow-hidden">
+                    <!-- Mode Header -->
+                    <div class="bg-md-tertiary-container text-md-on-tertiary-container p-4 sm:p-6">
+                        <h2 class="text-xl sm:text-2xl font-semibold flex items-center gap-3">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                            </svg>
+                            Video/GIF to ASCII
+                        </h2>
+                    </div>
+
+                    <div class="p-4 sm:p-6 space-y-6">
+                        <!-- Upload Section -->
+                        <div class="space-y-3">
+                            <label class="block text-sm font-medium text-md-on-surface-variant">Upload Video/GIF</label>
+                            <input type="file" id="video-upload" accept="video/*,.gif" class="hidden">
+                            <button onclick="document.getElementById('video-upload').click()" 
+                                    class="w-full bg-md-primary hover:bg-md-primary/90 text-md-on-primary py-3 px-4 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 text-sm sm:text-base">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                </svg>
+                                Choose Video/GIF File
+                            </button>
+                            <div id="video-preview" class="hidden">
+                                <video id="preview-video" class="w-full h-32 sm:h-40 object-cover rounded-xl border-2 border-md-outline-variant" muted loop></video>
+                            </div>
+                        </div>
+
+                        <!-- Controls Grid -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                            <!-- Detail Level -->
+                            <div class="space-y-3">
+                                <label class="block text-sm font-medium text-md-on-surface-variant">Detail Level</label>
+                                <div class="bg-md-surface-variant rounded-xl p-4">
+                                    <input type="range" id="video-detail-slider" min="20" max="100" value="60" 
+                                           class="w-full h-2 bg-md-outline-variant rounded-lg appearance-none cursor-pointer slider">
+                                    <div class="flex justify-between text-xs text-md-outline mt-2">
+                                        <span>Low</span>
+                                        <span>High</span>
+                                    </div>
+                                    <div class="text-center text-sm text-md-on-surface-variant mt-2">
+                                        Width: <span id="video-detail-value" class="font-semibold">60</span> characters
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- FPS -->
+                            <div class="space-y-3">
+                                <label class="block text-sm font-medium text-md-on-surface-variant">Output FPS</label>
+                                <div class="bg-md-surface-variant rounded-xl p-4">
+                                    <input type="range" id="fps-slider" min="5" max="30" value="15" 
+                                           class="w-full h-2 bg-md-outline-variant rounded-lg appearance-none cursor-pointer slider">
+                                    <div class="flex justify-between text-xs text-md-outline mt-2">
+                                        <span>5</span>
+                                        <span>30</span>
+                                    </div>
+                                    <div class="text-center text-sm text-md-on-surface-variant mt-2">
+                                        FPS: <span id="fps-value" class="font-semibold">15</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Generate Button -->
+                        <button id="generate-video-btn" disabled 
+                                class="w-full bg-md-secondary hover:bg-md-secondary/90 disabled:bg-md-surface-variant disabled:cursor-not-allowed text-md-on-secondary disabled:text-md-on-surface-variant py-3 px-4 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 text-sm sm:text-base">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                            Generate ASCII Video
+                        </button>
+
+                        <!-- Progress Bar -->
+                        <div id="progress-container" class="hidden space-y-3">
+                            <div class="flex justify-between text-sm text-md-on-surface-variant">
+                                <span>Processing frames...</span>
+                                <span id="progress-text">0%</span>
+                            </div>
+                            <div class="w-full bg-md-outline-variant rounded-full h-2">
+                                <div id="progress-bar" class="bg-md-primary h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Output -->
+                        <div class="space-y-3">
+                            <h3 class="text-lg font-semibold text-md-on-surface">Preview</h3>
+                            <div class="relative">
+                                <div id="ascii-video-output" class="bg-md-inverse-surface text-md-inverse-on-surface p-3 sm:p-4 rounded-xl min-h-48 sm:min-h-64 font-mono text-xs overflow-auto whitespace-pre border-2 border-md-outline-variant">
+                                    <div class="text-center text-md-outline mt-16 sm:mt-20 text-xs sm:text-sm">
+                                        Upload a video or GIF to generate ASCII animation
+                                    </div>
+                                </div>
+                                <button id="download-btn" class="hidden absolute top-2 right-2 bg-md-primary hover:bg-md-primary/90 text-md-on-primary px-3 py-1 rounded-lg text-xs sm:text-sm transition-all duration-300 flex items-center gap-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    Download .zip
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Navigation Bar -->
+    <div class="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
+        <div class="bg-md-surface-variant/95 backdrop-blur-md rounded-full shadow-2xl shadow-md-shadow/20 p-1 border border-md-outline-variant">
+            <div class="flex">
+                <button id="image-tab" class="nav-btn active flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-full font-medium transition-all duration-300 text-sm sm:text-base">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    <span class="hidden sm:inline">Image</span>
+                </button>
+                <button id="video-tab" class="nav-btn flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-full font-medium transition-all duration-300 text-sm sm:text-base">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                    <span class="hidden sm:inline">Video</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Custom slider styles */
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #6750A4;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(103, 80, 164, 0.3);
+        }
+
+        .slider::-moz-range-thumb {
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #6750A4;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(103, 80, 164, 0.3);
+        }
+
+        /* Toggle switch styles */
+        #invert-toggle:checked + .toggle-bg {
+            background-color: #6750A4;
+        }
+        #invert-toggle:checked + .toggle-bg + .toggle-dot {
+            transform: translateX(24px);
+            background-color: #FFFFFF;
+        }
+
+        /* Navigation button styles */
+        .nav-btn {
+            color: #49454F;
+            background: transparent;
+        }
+
+        .nav-btn.active {
+            background: #6750A4;
+            color: #FFFFFF;
+            box-shadow: 0 4px 12px rgba(103, 80, 164, 0.3);
+        }
+
+        .nav-btn:hover:not(.active) {
+            background: #E7E0EC;
+        }
+
+        /* Scrollbar styles for ASCII output */
+        #ascii-output::-webkit-scrollbar,
+        #ascii-video-output::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        #ascii-output::-webkit-scrollbar-track,
+        #ascii-video-output::-webkit-scrollbar-track {
+            background: #313033;
+            border-radius: 3px;
+        }
+
+        #ascii-output::-webkit-scrollbar-thumb,
+        #ascii-video-output::-webkit-scrollbar-thumb {
+            background: #D0BCFF;
+            border-radius: 3px;
+        }
+
+        #ascii-output::-webkit-scrollbar-thumb:hover,
+        #ascii-video-output::-webkit-scrollbar-thumb:hover {
+            background: #B69DF8;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 640px) {
+            #ascii-output,
+            #ascii-video-output {
+                font-size: 10px;
+                line-height: 1.2;
+            }
+            
+            .nav-btn {
+                min-width: 44px;
+                min-height: 44px;
+            }
+        }
+    </style>
+
+    <script>
+        // Global variables
+        let currentMode = 'image';
+        let uploadedImage = null;
+        let uploadedVideo = null;
+        let asciiFrames = [];
+        let animationInterval = null;
+        let isProcessing = false;
+
+        // Character sets for ASCII conversion
+        const charSets = {
+            default: '@%#*+=-:. ',
+            simple: '█▓▒░ ',
+            blocks: '██▓▒░',
+            complex: '@&%$#*+=~-:;,. '
+        };
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeEventListeners();
+            updateSliderValues();
+            syncInvertToggleVisual();
+        });
+
+        function initializeEventListeners() {
+            // Navigation
+            document.getElementById('image-tab').addEventListener('click', () => switchMode('image'));
+            document.getElementById('video-tab').addEventListener('click', () => switchMode('video'));
+
+            // Image mode
+            document.getElementById('image-upload').addEventListener('change', handleImageUpload);
+            document.getElementById('generate-image-btn').addEventListener('click', generateImageASCII);
+            document.getElementById('copy-btn').addEventListener('click', copyToClipboard);
+
+            // Video mode
+            document.getElementById('video-upload').addEventListener('change', handleVideoUpload);
+            document.getElementById('generate-video-btn').addEventListener('click', generateVideoASCII);
+            document.getElementById('download-btn').addEventListener('click', downloadZip);
+
+            // Sliders
+            document.getElementById('detail-slider').addEventListener('input', updateSliderValues);
+            document.getElementById('video-detail-slider').addEventListener('input', updateSliderValues);
+            document.getElementById('fps-slider').addEventListener('input', updateSliderValues);
+
+            // Toggle
+            document.getElementById('invert-toggle').addEventListener('change', syncInvertToggleVisual);
+            // Make the toggle switch clickable
+            const toggleBg = document.querySelector('.toggle-bg');
+            const toggleDot = document.querySelector('.toggle-dot');
+            const invertToggle = document.getElementById('invert-toggle');
+            [toggleBg, toggleDot].forEach(el => {
+                el.addEventListener('click', function() {
+                    invertToggle.checked = !invertToggle.checked;
+                    invertToggle.dispatchEvent(new Event('change'));
+                });
+            });
+        // ...existing code...
+
+        function syncInvertToggleVisual() {
+            const invertToggle = document.getElementById('invert-toggle');
+            const toggleBg = invertToggle.nextElementSibling;
+            const toggleDot = toggleBg.nextElementSibling;
+            if (invertToggle.checked) {
+                toggleBg.style.backgroundColor = '#6750A4';
+                toggleDot.style.transform = 'translateX(24px)';
+                toggleDot.style.backgroundColor = '#FFFFFF';
+            } else {
+                toggleBg.style.backgroundColor = '#CAC4D0';
+                toggleDot.style.transform = 'translateX(0)';
+                toggleDot.style.backgroundColor = '#FFFBFE';
+            }
+        }
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            
+            // Clear any running animations
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = null;
+            }
+            
+            // Update navigation
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(mode + '-tab').classList.add('active');
+            
+            // Update content visibility
+            document.querySelectorAll('.mode-content').forEach(content => content.classList.add('hidden'));
+            document.getElementById(mode + '-mode').classList.remove('hidden');
+        }
+
+        function updateSliderValues() {
+            document.getElementById('detail-value').textContent = document.getElementById('detail-slider').value;
+            document.getElementById('video-detail-value').textContent = document.getElementById('video-detail-slider').value;
+            document.getElementById('fps-value').textContent = document.getElementById('fps-slider').value;
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                uploadedImage = file;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('image-preview');
+                    const img = document.getElementById('preview-img');
+                    img.src = e.target.result;
+                    preview.classList.remove('hidden');
+                    document.getElementById('generate-image-btn').disabled = false;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function handleVideoUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                uploadedVideo = file;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('video-preview');
+                    const video = document.getElementById('preview-video');
+                    video.src = e.target.result;
+                    video.load();
+                    preview.classList.remove('hidden');
+                    document.getElementById('generate-video-btn').disabled = false;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function generateImageASCII() {
+            if (!uploadedImage) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    const width = parseInt(document.getElementById('detail-slider').value);
+                    const aspectRatio = img.height / img.width;
+                    const height = Math.floor(width * aspectRatio * 0.5); // ASCII chars are taller than wide
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const imageData = ctx.getImageData(0, 0, width, height);
+                    
+                    const ascii = convertToASCII(imageData, width, height);
+                    document.getElementById('ascii-output').textContent = ascii;
+                    document.getElementById('copy-btn').classList.remove('hidden');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(uploadedImage);
+        }
+
+        function convertToASCII(imageData, width, height) {
+            const charset = document.getElementById('charset-select').value;
+            const chars = charSets[charset];
+            const invert = document.getElementById('invert-toggle').checked;
+            
+            let ascii = '';
+            
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const offset = (y * width + x) * 4;
+                    const r = imageData.data[offset];
+                    const g = imageData.data[offset + 1];
+                    const b = imageData.data[offset + 2];
+                    
+                    // Calculate brightness
+                    const brightness = (r + g + b) / 3;
+                    const normalizedBrightness = brightness / 255;
+                    
+                    // Apply inversion if needed
+                    const finalBrightness = invert ? 1 - normalizedBrightness : normalizedBrightness;
+                    
+                    // Map to character
+                    const charIndex = Math.floor(finalBrightness * (chars.length - 1));
+                    ascii += chars[charIndex];
+                }
+                ascii += '\n';
+            }
+            
+            return ascii;
+        }
+
+        function generateVideoASCII() {
+            if (!uploadedVideo || isProcessing) return;
+
+            isProcessing = true;
+            const generateBtn = document.getElementById('generate-video-btn');
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = `
+                <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                Processing...
+            `;
+
+            const video = document.createElement('video');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            video.src = URL.createObjectURL(uploadedVideo);
+            video.muted = true;
+            video.preload = 'metadata';
+            
+            video.addEventListener('loadedmetadata', function() {
+                const width = parseInt(document.getElementById('video-detail-slider').value);
+                const aspectRatio = video.videoHeight / video.videoWidth;
+                const height = Math.floor(width * aspectRatio * 0.5);
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                const fps = parseInt(document.getElementById('fps-slider').value);
+                const frameInterval = 1 / fps;
+                const totalFrames = Math.min(Math.floor(video.duration * fps), 300); // Limit to 300 frames
+                
+                asciiFrames = [];
+                let currentFrame = 0;
+                
+                document.getElementById('progress-container').classList.remove('hidden');
+                
+                function processFrame() {
+                    if (currentFrame >= totalFrames) {
+                        // Processing complete
+                        document.getElementById('progress-container').classList.add('hidden');
+                        generateBtn.disabled = false;
+                        generateBtn.innerHTML = `
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                            Generate ASCII Video
+                        `;
+                        isProcessing = false;
+                        
+                        if (asciiFrames.length > 0) {
+                            playASCIIAnimation();
+                            document.getElementById('download-btn').classList.remove('hidden');
+                        }
+                        return;
+                    }
+                    
+                    const time = Math.min(currentFrame * frameInterval, video.duration - 0.1);
+                    video.currentTime = time;
+                    
+                    const onSeeked = function() {
+                        video.removeEventListener('seeked', onSeeked);
+                        
+                        try {
+                            ctx.drawImage(video, 0, 0, width, height);
+                            const imageData = ctx.getImageData(0, 0, width, height);
+                            const ascii = convertToASCII(imageData, width, height);
+                            asciiFrames.push(ascii);
+                        } catch (error) {
+                            console.warn('Frame processing error:', error);
+                        }
+                        
+                        currentFrame++;
+                        const progress = (currentFrame / totalFrames) * 100;
+                        document.getElementById('progress-bar').style.width = progress + '%';
+                        document.getElementById('progress-text').textContent = Math.round(progress) + '%';
+                        
+                        setTimeout(processFrame, 50); // Delay to prevent blocking
+                    };
+                    
+                    video.addEventListener('seeked', onSeeked);
+                }
+                
+                processFrame();
+            });
+            
+            video.addEventListener('error', function(e) {
+                console.error('Video loading error:', e);
+                document.getElementById('progress-container').classList.add('hidden');
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = `
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    Generate ASCII Video
+                `;
+                isProcessing = false;
+                alert('Error loading video. Please try a different file.');
+            });
+            
+            video.load();
+        }
+
+        function playASCIIAnimation() {
+            if (asciiFrames.length === 0) return;
+            
+            const output = document.getElementById('ascii-video-output');
+            const fps = parseInt(document.getElementById('fps-slider').value);
+            let frameIndex = 0;
+            
+            if (animationInterval) {
+                clearInterval(animationInterval);
+            }
+            
+            animationInterval = setInterval(() => {
+                if (frameIndex < asciiFrames.length) {
+                    output.textContent = asciiFrames[frameIndex];
+                    frameIndex = (frameIndex + 1) % asciiFrames.length;
+                }
+            }, 1000 / fps);
+        }
+
+        function copyToClipboard() {
+            const ascii = document.getElementById('ascii-output').textContent;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(ascii).then(() => {
+                    showCopyFeedback();
+                }).catch(() => {
+                    fallbackCopyToClipboard(ascii);
+                });
+            } else {
+                fallbackCopyToClipboard(ascii);
+            }
+        }
+
+        function fallbackCopyToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showCopyFeedback();
+            } catch (err) {
+                console.error('Copy failed:', err);
+            }
+            
+            document.body.removeChild(textArea);
+        }
+
+        function showCopyFeedback() {
+            const btn = document.getElementById('copy-btn');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = `
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                Copied!
+            `;
+            btn.style.backgroundColor = '#4CAF50';
+            
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.style.backgroundColor = '#6750A4';
+            }, 2000);
+        }
+
+        function downloadZip() {
+            if (asciiFrames.length === 0) return;
+            
+            const zip = new JSZip();
+            
+            asciiFrames.forEach((frame, index) => {
+                const filename = `frame_${String(index + 1).padStart(4, '0')}.txt`;
+                zip.file(filename, frame);
+            });
+            
+            zip.generateAsync({type: 'blob'}).then(function(content) {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(content);
+                link.download = 'ascii_animation.zip';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }).catch(function(error) {
+                console.error('ZIP generation error:', error);
+                alert('Error creating download file. Please try again.');
+            });
+        }
+    </script>
+</body>
+</html>
+
